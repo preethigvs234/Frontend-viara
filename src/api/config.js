@@ -1,7 +1,6 @@
 // API Configuration
 // Use environment variable or fallback to localhost for development
 export const API_BASE_URL = import.meta.env.VITE_API_URL ;
-console.log("API_BASE_URL:", API_BASE_URL);
 // API endpoints
 export const API_ENDPOINTS = {
   onboarding: `${API_BASE_URL}/api/user/onboarding-complete`,
