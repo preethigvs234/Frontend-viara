@@ -6,11 +6,27 @@ import tailwindcss from '@tailwindcss/vite'
 export default defineConfig({
   plugins: [
     tailwindcss(),
-    react()
+    react({
+      // Fix for production build
+      jsxRuntime: 'automatic'
+    })
   ],
   server: {
     allowedHosts: [
       'frontend-viara.onrender.com'
     ]
+  },
+  build: {
+    // Optimize production build
+    outDir: 'dist',
+    sourcemap: false,
+    minify: 'terser',
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom', 'react-router-dom']
+        }
+      }
+    }
   }
 })
