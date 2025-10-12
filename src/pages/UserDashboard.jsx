@@ -111,7 +111,8 @@ export default function UserDashboard() {
   // Update saved items details by matching with current recommendations
   function updateSavedItemsDetails(savedSet) {
     const savedDetails = [];
-    const allItems = [...recs.movies, ...recs.books, ...recs.albums];
+    // Include both regular recommendations AND smart recommendations
+    const allItems = [...recs.movies, ...recs.books, ...recs.albums, ...smartRecs];
     
     savedSet.forEach(key => {
       const [itemType, itemId] = key.split('-');
@@ -138,6 +139,9 @@ export default function UserDashboard() {
       });
       const data = await resp.json();
       setSmartRecs(data.recommendations || []);
+      
+      // Update saved items details after smart recs load
+      updateSavedItemsDetails(savedItems);
     } catch (error) {
       console.error('Error loading smart recommendations:', error);
       setSmartRecs([]);
