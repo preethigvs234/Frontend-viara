@@ -13,4 +13,5 @@ export const API_ENDPOINTS = {
     `${API_BASE_URL}/api/user/cross-recommend?user_id=${userId}&item_id=${itemId}&item_type=${itemType}`,
   discovery: `${API_BASE_URL}/api/user/discovery`,
   regenerate: `${API_BASE_URL}/api/user/regenerate-recommendations`,
+  DEEP_DIVE: `${API_BASE_URL}/api/user/deep-dive`,
 };

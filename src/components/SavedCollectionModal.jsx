@@ -1,41 +1,91 @@
-import React from "react";
+import React, { useState } from "react";
 
 export default function SavedCollectionModal({ savedItems, onClose, onCardClick, onRemove, genreMap }) {
+  const [activeFilter, setActiveFilter] = useState('movie');
+  
+  // Filter items based on active tab
+  const filteredItems = savedItems.filter(item => item.item_type === activeFilter);
+  
+  // Count items by type
+  const counts = {
+    movie: savedItems.filter(item => item.item_type === 'movie').length,
+    book: savedItems.filter(item => item.item_type === 'book').length,
+    album: savedItems.filter(item => item.item_type === 'album').length,
+  };
+  
   return (
     <div className="fixed inset-0 z-50 bg-black bg-opacity-70 flex items-center justify-center p-4">
       <div className="bg-[#232323] rounded-xl w-full max-w-6xl shadow-2xl max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div className="sticky top-0 bg-[#232323] flex items-center justify-between p-6 border-b border-gray-600 z-10">
-          <div className="flex items-center gap-3">
-            <svg className="w-6 h-6 text-[#1793d1]" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M17 3H7c-1.1 0-2 .9-2 2v16l7-3 7 3V5c0-1.1-.9-2-2-2zm0 15l-5-2.18L7 18V5h10v13z"/>
-            </svg>
-            <h2 className="text-white font-bold text-2xl">Saved Collection</h2>
-            <span className="bg-[#1793d1] text-white text-sm px-3 py-1 rounded-full">
-              {savedItems.length} items
-            </span>
+        <div className="sticky top-0 bg-[#232323] border-b border-gray-600 z-10">
+          <div className="flex items-center justify-between p-6">
+            <div className="flex items-center gap-3">
+              <svg className="w-6 h-6 text-[#1793d1]" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M17 3H7c-1.1 0-2 .9-2 2v16l7-3 7 3V5c0-1.1-.9-2-2-2zm0 15l-5-2.18L7 18V5h10v13z"/>
+              </svg>
+              <h2 className="text-white font-bold text-2xl">Saved Collection</h2>
+              <span className="bg-[#1793d1] text-white text-sm px-3 py-1 rounded-full">
+                {filteredItems.length} items
+              </span>
+            </div>
+            <button 
+              onClick={onClose}
+              className="text-gray-400 hover:text-white text-3xl font-bold transition-colors"
+            >
+              ×
+            </button>
           </div>
-          <button 
-            onClick={onClose}
-            className="text-gray-400 hover:text-white text-3xl font-bold transition-colors"
-          >
-            ×
-          </button>
+          
+          {/* Filter Tabs */}
+          <div className="flex gap-2 px-6 pb-4">
+            <button
+              onClick={() => setActiveFilter('movie')}
+              className={`px-4 py-2 rounded-lg font-semibold transition-all ${
+                activeFilter === 'movie'
+                  ? 'bg-[#1793d1] text-white'
+                  : 'bg-[#181314] text-gray-400 hover:text-white hover:bg-[#2a2a2a]'
+              }`}
+            >
+              Movies ({counts.movie})
+            </button>
+            <button
+              onClick={() => setActiveFilter('book')}
+              className={`px-4 py-2 rounded-lg font-semibold transition-all ${
+                activeFilter === 'book'
+                  ? 'bg-[#1793d1] text-white'
+                  : 'bg-[#181314] text-gray-400 hover:text-white hover:bg-[#2a2a2a]'
+              }`}
+            >
+              Books ({counts.book})
+            </button>
+            <button
+              onClick={() => setActiveFilter('album')}
+              className={`px-4 py-2 rounded-lg font-semibold transition-all ${
+                activeFilter === 'album'
+                  ? 'bg-[#1793d1] text-white'
+                  : 'bg-[#181314] text-gray-400 hover:text-white hover:bg-[#2a2a2a]'
+              }`}
+            >
+              Albums ({counts.album})
+            </button>
+          </div>
         </div>
 
         {/* Content */}
         <div className="p-6">
-          {savedItems.length === 0 ? (
+          {filteredItems.length === 0 ? (
             <div className="text-center py-20">
               <svg className="w-20 h-20 mx-auto mb-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
               </svg>
-              <p className="text-gray-400 text-lg mb-2">No saved items yet</p>
+              <p className="text-gray-400 text-lg mb-2">
+                No {activeFilter === 'movie' ? 'movies' : activeFilter === 'book' ? 'books' : 'albums'} saved yet
+              </p>
               <p className="text-gray-500 text-sm">Click "Save for Later" on any item to add it to your collection</p>
             </div>
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
-              {savedItems.map(saved => (
+              {filteredItems.map(saved => (
                 <div
                   key={`${saved.item_type}-${saved.item_id}`}
                   className="bg-[#181314] rounded-xl p-4 flex flex-col items-center cursor-pointer hover:ring-2 hover:ring-yellow-500 shadow-lg relative transition-all duration-200 hover:scale-105"

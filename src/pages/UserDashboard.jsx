@@ -4,6 +4,8 @@ import { useNavigate } from "react-router-dom";
 import DiscoveryMode from "../components/DiscoveryMode";
 import RegenerateModal from "../components/RegenerateModal";
 import SavedCollectionModal from "../components/SavedCollectionModal";
+import DiveDeepSection from "../components/DiveDeepSection";
+import DiveDeepModal from "../components/DiveDeepModal";
 import { API_ENDPOINTS } from "../api/config";
 
 // TMDb genre mapping (extend as needed)
@@ -32,6 +34,8 @@ export default function UserDashboard() {
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [showSavedCollection, setShowSavedCollection] = useState(false);
+  const [showDiveDeepModal, setShowDiveDeepModal] = useState(false);
+  const [diveDeepType, setDiveDeepType] = useState(null);
   // Feedback state
   const [likedItems, setLikedItems] = useState(new Set());
   const [dislikedItems, setDislikedItems] = useState(new Set());
@@ -73,11 +77,9 @@ export default function UserDashboard() {
       }
       
       await fetchAllRecs();
-      await loadUserFeedback(); // Load user's feedback
+      await loadUserFeedback(); // Load user's feedback after recs are loaded
       await loadSmartRecommendations(); // Load personalized recommendations
     })();
-     
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [navigate]);
 
   // Load user's existing feedback
@@ -86,30 +88,52 @@ export default function UserDashboard() {
       const resp = await fetch(API_ENDPOINTS.getFeedback(userIdRef.current));
       const data = await resp.json();
       
+      console.log('[Feedback] API Response:', data);
+      console.log('[Feedback] Saved items count:', data.saved?.length || 0);
+      
       const liked = new Set();
       const disliked = new Set();
       const saved = new Set();
+      const savedDetails = [];
       
-      data.forEach(item => {
+      data.likes?.forEach(item => {
         const key = `${item.item_type}-${item.item_id}`;
-        if (item.feedback_type === 'like') liked.add(key);
-        else if (item.feedback_type === 'dislike') disliked.add(key);
-        else if (item.feedback_type === 'saved') saved.add(key);
+        liked.add(key);
       });
+      
+      data.dislikes?.forEach(item => {
+        const key = `${item.item_type}-${item.item_id}`;
+        disliked.add(key);
+      });
+      
+      data.saved?.forEach(item => {
+        const key = `${item.item_type}-${item.item_id}`;
+        saved.add(key);
+        
+        // Add full item details if available (from backend JOIN)
+        if (item.title) {
+          console.log('[Feedback] Adding saved item:', item.title);
+          savedDetails.push(item);
+        } else {
+          console.warn('[Feedback] Saved item missing details:', item);
+        }
+      });
+      
+      console.log('[Feedback] Total saved items with details:', savedDetails.length);
       
       setLikedItems(liked);
       setDislikedItems(disliked);
       setSavedItems(saved);
-      
-      // Match saved items with full recommendation details
-      updateSavedItemsDetails(saved);
+      setSavedItemsDetails(savedDetails);
     } catch (error) {
       console.error('Error loading feedback:', error);
     }
   }
 
   // Update saved items details by matching with current recommendations
-  function updateSavedItemsDetails(savedSet) {
+  // Note: This is kept for backward compatibility but no longer needed
+  // since backend returns full details via JOIN
+  function _updateSavedItemsDetails(savedSet) {
     const savedDetails = [];
     // Include both regular recommendations AND smart recommendations
     const allItems = [...recs.movies, ...recs.books, ...recs.albums, ...smartRecs];
@@ -118,10 +142,16 @@ export default function UserDashboard() {
       const [itemType, itemId] = key.split('-');
       const item = allItems.find(i => i.item_id === itemId);
       if (item) {
-        savedDetails.push({
-          ...item,
-          item_type: itemType
-        });
+        // Avoid duplicates by checking if item is already in savedDetails
+        const isDuplicate = savedDetails.some(
+          saved => saved.item_id === item.item_id && saved.item_type === itemType
+        );
+        if (!isDuplicate) {
+          savedDetails.push({
+            ...item,
+            item_type: itemType
+          });
+        }
       }
     });
     
@@ -140,8 +170,7 @@ export default function UserDashboard() {
       const data = await resp.json();
       setSmartRecs(data.recommendations || []);
       
-      // Update saved items details after smart recs load
-      updateSavedItemsDetails(savedItems);
+      // No need to update saved items details here - already loaded from backend
     } catch (error) {
       console.error('Error loading smart recommendations:', error);
       setSmartRecs([]);
@@ -192,12 +221,23 @@ export default function UserDashboard() {
         else if (feedbackType === 'dislike') setDislikedItems(newSet);
         else {
           setSavedItems(newSet);
-          // Update saved items details display
-          updateSavedItemsDetails(newSet);
+          // Immediately update saved items details with the current item
+          const allItems = [...recs.movies, ...recs.books, ...recs.albums, ...smartRecs];
+          const savedItem = allItems.find(i => i.item_id === itemId);
+          if (savedItem) {
+            setSavedItemsDetails(prev => {
+              // Check if already exists to avoid duplicates
+              const exists = prev.some(item => item.item_id === itemId && item.item_type === itemType);
+              if (exists) return prev;
+              return [...prev, { ...savedItem, item_type: itemType }];
+            });
+          }
         }
         
         // Reload smart recommendations after feedback
-        await loadSmartRecommendations();
+        if (feedbackType === 'like' || feedbackType === 'dislike') {
+          await loadSmartRecommendations();
+        }
       }
     } catch (error) {
       console.error('Error submitting feedback:', error);
@@ -236,8 +276,10 @@ export default function UserDashboard() {
       else if (feedbackType === 'dislike') setDislikedItems(newSet);
       else {
         setSavedItems(newSet);
-        // Update saved items details display
-        updateSavedItemsDetails(newSet);
+        // Remove from saved items details
+        setSavedItemsDetails(prev => 
+          prev.filter(item => !(item.item_id === itemId && item.item_type === itemType))
+        );
       }
     } catch (error) {
       console.error('Error removing feedback:', error);
@@ -252,8 +294,7 @@ export default function UserDashboard() {
     setLoading(false);
     setPageIdx({ movies: 0, books: 0, albums: 0 }); // reset pages on reload
     
-    // Update saved items details after recommendations load
-    updateSavedItemsDetails(savedItems);
+    // No need to update saved items details here - already loaded from backend
   }
 
   async function handleRegenerateComplete(usedPreferences) {
@@ -283,6 +324,11 @@ export default function UserDashboard() {
   function handleCardClick(type, item) {
     setModal({ open: true, type, item, cross: null });
     // Don't automatically fetch cross-recommendations anymore
+  }
+
+  function handleDiveDeepCardClick(type) {
+    setDiveDeepType(type);
+    setShowDiveDeepModal(true);
   }
 
   if (loading)
@@ -388,7 +434,10 @@ export default function UserDashboard() {
             <span className="text-xs text-gray-400 font-normal">Based on your likes and users with similar taste</span>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-            {smartRecs.slice(0, 5).map(rec => (
+            {smartRecs.filter(rec => {
+              const key = `${rec.item_type}-${rec.item_id}`;
+              return !savedItems.has(key);
+            }).slice(0, 5).map(rec => (
               <div
                 key={`${rec.item_type}-${rec.item_id}`}
                 className="bg-[#232323] rounded-xl p-4 flex flex-col items-center cursor-pointer hover:ring-2 hover:ring-green-500 shadow"
@@ -426,6 +475,7 @@ export default function UserDashboard() {
         genreMap={TMDB_GENRE_MAP}
         likedItems={likedItems}
         dislikedItems={dislikedItems}
+        savedItems={savedItems}
         onFeedback={handleFeedback}
         processingFeedback={processingFeedback}
       />
@@ -438,6 +488,7 @@ export default function UserDashboard() {
         onCardClick={item => handleCardClick("book", item)}
         likedItems={likedItems}
         dislikedItems={dislikedItems}
+        savedItems={savedItems}
         onFeedback={handleFeedback}
         processingFeedback={processingFeedback}
       />
@@ -450,6 +501,7 @@ export default function UserDashboard() {
         onCardClick={item => handleCardClick("album", item)}
         likedItems={likedItems}
         dislikedItems={dislikedItems}
+        savedItems={savedItems}
         onFeedback={handleFeedback}
         processingFeedback={processingFeedback}
       />
@@ -500,16 +552,37 @@ export default function UserDashboard() {
           genreMap={TMDB_GENRE_MAP}
         />
       )}
+
+      {/* Dive Deep Section */}
+      <DiveDeepSection onCardClick={handleDiveDeepCardClick} />
+
+      {/* Dive Deep Modal */}
+      {showDiveDeepModal && (
+        <DiveDeepModal
+          isOpen={showDiveDeepModal}
+          onClose={() => setShowDiveDeepModal(false)}
+          itemType={diveDeepType}
+          userId={userIdRef.current}
+        />
+      )}
       </div>
     </div>
   );
 }
 
-function CardRow({ title, section, items, pageIdx, onRefresh, onCardClick, genreMap, likedItems, dislikedItems, onFeedback, processingFeedback }) {
+function CardRow({ title, section, items, pageIdx, onRefresh, onCardClick, genreMap, likedItems, dislikedItems, savedItems, onFeedback, processingFeedback }) {
   const PAGE_SIZE = 5;
+  
+  // Filter out saved items from display
+  const itemType = section === "movies" ? "movie" : section === "books" ? "book" : "album";
+  const filteredItems = items.filter(item => {
+    const key = `${itemType}-${item.item_id}`;
+    return !savedItems?.has(key);
+  });
+  
   const start = pageIdx * PAGE_SIZE;
-  const data = items.slice(start, start + PAGE_SIZE);
-  const maxPages = Math.ceil(items.length / PAGE_SIZE);
+  const data = filteredItems.slice(start, start + PAGE_SIZE);
+  const maxPages = Math.ceil(filteredItems.length / PAGE_SIZE);
   const refreshDisabled = pageIdx + 1 >= maxPages || pageIdx >= MAX_REFRESH;
 
   return (
@@ -715,11 +788,11 @@ function DetailModal({ item, cross, type, onClose, genreMap, savedItems, onFeedb
         <div className="mt-3">
           <button
             onClick={() => onFeedback(item.item_id, type, 'saved')}
-            disabled={isProcessing}
+            disabled={isProcessing || isSaved}
             className={`${
-              isSaved ? 'bg-yellow-500' : 'bg-gray-600'
+              isSaved ? 'bg-green-600' : 'bg-gray-600'
             } ${
-              isProcessing ? 'opacity-50 cursor-not-allowed' : 'hover:opacity-80'
+              isProcessing ? 'opacity-50 cursor-not-allowed' : isSaved ? 'cursor-default' : 'hover:opacity-80'
             } text-white px-4 py-2 rounded-lg font-semibold transition-opacity flex items-center gap-2`}
           >
             {isProcessing ? (
@@ -729,8 +802,8 @@ function DetailModal({ item, cross, type, onClose, genreMap, savedItems, onFeedb
               </>
             ) : isSaved ? (
               <>
-                <span>⭐</span>
-                <span>Saved</span>
+                <span>✓</span>
+                <span>Saved to Collection</span>
               </>
             ) : (
               <>
@@ -767,8 +840,8 @@ function DetailModal({ item, cross, type, onClose, genreMap, savedItems, onFeedb
                 </svg>
                 <span>
                   {type === "movie" ? "Show Soundtrack & Related Books" : 
-                   type === "album" ? "Show Related Movies" : 
-                   "Show Related Movies & Music"}
+                   type === "album" ? "Show Related Movies & Books" : 
+                   "Show Related Movies & Soundtrack"}
                 </span>
               </>
             )}
@@ -783,7 +856,9 @@ function DetailModal({ item, cross, type, onClose, genreMap, savedItems, onFeedb
             {crossData.movies && crossData.movies.length > 0 && (
               <div className="mt-4">
                 <div className="text-[#1793d1] font-bold mb-1">
-                  {type === "album" ? "🎬 Related Movies" : "🎬 Related Movies"}
+                  {type === "album" ? "🎬 Related Movies" : 
+                   type === "book" ? "🎬 Related Movies" : 
+                   "🎬 Related Movies"}
                 </div>
                 <div className="flex gap-3 overflow-x-auto">
                   {crossData.movies.map(m => (
@@ -829,7 +904,9 @@ function DetailModal({ item, cross, type, onClose, genreMap, savedItems, onFeedb
             {crossData.albums && crossData.albums.length > 0 && (
               <div className="mt-4">
                 <div className="text-[#1793d1] font-bold mb-1">
-                  {type === "movie" ? "🎵 Soundtrack" : "🎵 Related Music"}
+                  {type === "movie" ? "🎵 Movie Soundtrack & Albums" : 
+                   type === "book" ? "🎵 Related Music & Soundtracks" : 
+                   "🎵 Related Music"}
                 </div>
                 <div className="flex gap-3 overflow-x-auto">
                   {crossData.albums.map(a => (

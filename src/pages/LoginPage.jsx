@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { MdVisibility, MdVisibilityOff } from "react-icons/md";
 import { supabase } from '../supabaseClient';
 
 export default function LoginPage() {
@@ -7,6 +8,7 @@ export default function LoginPage() {
     email: "",
     password: "",
   });
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [welcome, setWelcome] = useState("");
@@ -88,16 +90,34 @@ export default function LoginPage() {
           </div>
           <div>
             <label className="block font-medium text-gray-200 mb-1">Password</label>
-            <input
-              type="password"
-              name="password"
-              placeholder="Enter your password"
-              className="w-full px-4 py-3 rounded-lg bg-[#171717] text-white border border-[#232323] focus:outline-none focus:ring-2 focus:ring-[#1793d1] placeholder:text-gray-400"
-              value={form.password}
-              onChange={handleChange}
-              autoComplete="current-password"
-              disabled={loading}
-            />
+            <div className="relative">
+              <input
+                type={showPassword ? "text" : "password"}
+                name="password"
+                placeholder="Enter your password"
+                className="w-full px-4 py-3 rounded-lg bg-[#171717] text-white border border-[#232323] focus:outline-none focus:ring-2 focus:ring-[#1793d1] placeholder:text-gray-400 pr-12"
+                value={form.password}
+                onChange={handleChange}
+                autoComplete="current-password"
+                disabled={loading}
+              />
+              <span className="absolute inset-y-0 right-3 flex items-center">
+                <button
+                  type="button"
+                  className="p-0 bg-transparent border-none shadow-none focus:outline-none"
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => setShowPassword((v) => !v)}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  disabled={loading}
+                >
+                  {showPassword ? (
+                    <MdVisibility size={22} className="text-gray-400 hover:text-gray-200" />
+                  ) : (
+                    <MdVisibilityOff size={22} className="text-gray-400 hover:text-gray-200" />
+                  )}
+                </button>
+              </span>
+            </div>
           </div>
           {error && <p className="text-red-500 text-center">{error}</p>}
           <button
