@@ -343,7 +343,7 @@ export default function UserDashboard() {
       {/* Navbar */}
       <nav className="bg-[#232323] px-4 md:px-6 py-4 flex items-center justify-between shadow-lg">
         <div className="text-2xl font-bold text-[#1793d1]">
-          Viara
+          CurateMe
         </div>
         <div className="relative">
           <button

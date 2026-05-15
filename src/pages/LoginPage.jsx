@@ -70,7 +70,7 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen w-full flex items-center justify-center bg-[#181314]">
       <div className="bg-[#232323] w-full max-w-md rounded-xl shadow-lg px-8 py-10 flex flex-col">
-        <h2 className="text-3xl font-bold text-[#1793d1] mb-2 text-center">Login to Viara</h2>
+        <h2 className="text-3xl font-bold text-[#1793d1] mb-2 text-center">Login to CurateMe</h2>
         <p className="text-center text-gray-300 mb-6">
           Enter your credentials to continue
         </p>

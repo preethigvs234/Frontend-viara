@@ -116,7 +116,7 @@ export default function SignUp() {
   return (
     <div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-tr from-[#181314] via-[#222] to-[#1793d1]/30 transition-all duration-500 relative overflow-hidden">
       <div className="bg-[#181314]/80 w-full max-w-md rounded-xl shadow-2xl px-8 py-10 flex flex-col backdrop-blur-md border border-[#1793d1]/30 mt-4">
-        <h2 className="text-4xl font-extrabold text-[#1793d1] mb-4 text-center">Join Viara</h2>
+        <h2 className="text-4xl font-extrabold text-[#1793d1] mb-4 text-center">Join CurateMe</h2>
         <p className="text-center text-gray-300 mb-6 text-lg">
           {step === "form"
             ? "Create your account and discover amazing recommendations"

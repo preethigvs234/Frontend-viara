@@ -15,7 +15,7 @@ const features = [
   },
   {
     title: "Real-Time Learning",
-    desc: "Viara adapts instantly as your interests change.",
+    desc: "CurateMe adapts instantly as your interests change.",
   },
 ];
 
@@ -38,7 +38,7 @@ export default function LandingPage() {
         className="text-[6rem] md:text-[8rem] font-extrabold text-[#1793d1] mb-3 text-center leading-none z-10"
         title="Welcome!"
       >
-        Viara
+        CurateMe
       </h1>
       <div className="text-xl md:text-2xl text-gray-400 mb-6 text-center font-medium z-10">
         The smart way to discover what you'll love next
@@ -63,7 +63,7 @@ export default function LandingPage() {
         <MdOutlineAutoAwesome size={28} />
         <span className="text-xl">Powered by Google Gemini</span>
         <button
-          aria-label="How does Viara work?"
+          aria-label="How does CurateMe work?"
           className="ml-4 hover:text-[#1793d1] focus:text-[#1793d1] transition"
           onClick={() => setShowInfo(true)}
         >
@@ -116,14 +116,14 @@ export default function LandingPage() {
             >
               ×
             </button>
-            <h3 className="text-2xl font-bold mb-2 text-[#1793d1]">How does Viara work?</h3>
+            <h3 className="text-2xl font-bold mb-2 text-[#1793d1]">How does CurateMe work?</h3>
             <p className="mb-2">
-              Viara uses AI to learn your taste in movies, books, and music. It adapts instantly as you interact, recommending content that matches your evolving interests. Your preferences for genre and language are securely stored and used only for improving your experience.
+              CurateMe uses AI to learn your taste in movies, books, and music. It adapts instantly as you interact, recommending content that matches your evolving interests. Your preferences for genre and language are securely stored and used only for improving your experience.
             </p>
             <ul className="mb-2 list-disc pl-5">
               <li>Sign up and select your favorite genres/languages</li>
               <li>Get personalized recommendations instantly</li>
-              <li>Viara keeps learning and improving just for you!</li>
+              <li>CurateMe keeps learning and improving just for you!</li>
             </ul>
             <div className="text-sm text-gray-400 mt-4">
               Your data is private and never shared.
